@@ -10,6 +10,12 @@ export class User {
   id: number
 
   @Column()
+  email: string
+
+  @Column()
+  password: string
+
+  @Column()
   firstName: string
 
   @Column()
@@ -29,4 +35,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date
+
+  @Column()
+  isDeleted: number
 }
