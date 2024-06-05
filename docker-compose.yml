@@ -1,7 +1,7 @@
 version: '3.9'
 
 services:
-  shinapostavka:
+  usersbackend:
     container_name: users-backend
     hostname: users-app
     build:
