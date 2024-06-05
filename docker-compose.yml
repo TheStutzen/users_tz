@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  shinapostavka:
+    container_name: users-backend
+    hostname: users-app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: sh -c "npm i && npm run start:dev"
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    external:
+      name: db_default
