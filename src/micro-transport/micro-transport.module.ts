@@ -9,8 +9,8 @@ import { MicroTransportService } from './micro-transport.service'
         name: 'MICROSERVICE_CLIENT',
         transport: Transport.TCP,
         options: {
-          host: 'mailer',
-          port: 3050,
+          host: 'data-access-layer',
+          port: 3090,
         },
       },
     ]),
