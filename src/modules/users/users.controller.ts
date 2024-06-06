@@ -8,7 +8,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger'
 import { User } from './entities/user.entity'
-import { MessagePattern } from '@nestjs/microservices'
 
 @ApiBearerAuth()
 @ApiTags('User')
@@ -26,11 +25,6 @@ export class UsersController {
   @ApiResponse({ status: 500, description: 'Внутренняя ошибка сервера' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto)
-  }
-
-  @MessagePattern('users:getCountByState')
-  async getCountByState(data: boolean) {
-    return this.usersService.getCountByState(data)
   }
 
   @Patch()
