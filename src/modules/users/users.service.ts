@@ -8,6 +8,7 @@ import { generatePassword } from 'src/utils/GenPass'
 import { hashPassword } from 'src/utils/Bcrypt'
 import * as dayjs from 'dayjs'
 import * as utc from 'dayjs/plugin/utc'
+import { RmqService } from 'src/rmq/rmq.service'
 dayjs.extend(utc)
 
 @Injectable()
@@ -16,6 +17,7 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly microTransportService: MicroTransportService,
+    private readonly rmqService: RmqService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -38,51 +40,56 @@ export class UsersService {
       password: await hashPassword(password),
     })
 
-    await this.microTransportService.sendToMicroservice('signUp_sendEmail', {
-      email: createUserDto.email,
-      firstName: createUserDto.firstName,
-      password,
+    await this.rmqService.sendToQueue('signUp_sendEmail', {
+      type: 'email',
+      data: {
+        priority: 'high',
+        template: 'signup',
+        templateData: {
+          email: createUserDto.email,
+          firstName: createUserDto.firstName,
+          password,
+        },
+      },
     })
 
-    await this.microTransportService.sendToMicroservice('createUser', {
-      userId: user.id,
-      createdAt: dayjs().utc().format(),
-      method: 'created',
+    await this.microTransportService.sendToMicroservice('users:createUser', {
+      user,
     })
 
     return 'Пользователь успешно зарегестрирован проверьте почту!'
   }
 
   async findByEmail(params: string): Promise<User> {
-    const result = await this.userRepository
-      .createQueryBuilder('User')
-      .where('User.email = :email', { email: params })
-      .getOne()
+    const result = await this.microTransportService.sendToMicroservice(
+      'users:findByEmail',
+      { params },
+    )
 
     return result
   }
 
   async getCountByState(params: boolean) {
-    const result = await this.userRepository
-      .createQueryBuilder('User')
-      .where('User.state = :state', { state: params })
-      .getCount()
+    const result = await this.microTransportService.sendToMicroservice(
+      'users:getCountByState',
+      { params },
+    )
 
     return result
   }
 
   async update(params: Partial<User>) {
-    const { id, ...data } = params
+    const result = await this.microTransportService.sendToMicroservice(
+      'users:update',
+      {
+        params,
+      },
+    )
 
-    await this.userRepository.update(id, data)
-
-    await this.microTransportService.sendToMicroservice('createUser', {
-      userId: id,
-      updatedAt: dayjs().utc().format(),
-      method: 'updated',
-    })
-
-    return 'Пользователь успешно обновлен!'
+    if (result) {
+      return 'Пользователь успешно обновлен!'
+    }
+    return 'Что-то пошло не так!'
   }
 
   async getAllUsers() {
